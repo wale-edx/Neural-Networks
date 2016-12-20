@@ -114,12 +114,13 @@ def k_means(k):
         centers=recenter(clusters)
         #if i%30 == 0 :
     keys = sorted(clusters.keys())  
-    for K in keys:
-        plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
-        plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
+    #plotting el clusters
+    #for K in keys:
+        #plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
+        #plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
     #print " iteration number :" , i
         #print " "
-    show()
+    #show()
     return clusters,centers
 
 
