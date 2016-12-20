@@ -1,11 +1,14 @@
 
 # coding: utf-8
 
-# # TODO
-#    ## 1) Training :3
-#   ## 2) add function to check if the centroids keep moving 
+# In[ ]:
 
-# In[126]:
+# TODO
+   ## 1) Training :3
+  ## 2) add function to check if the centroids keep moving 
+
+
+# In[4]:
 
 get_ipython().magic(u'pylab inline')
 from scipy.linalg import norm, pinv
@@ -14,7 +17,7 @@ import math
 random.seed()
 
 
-# In[127]:
+# In[5]:
 
 # Usage: data = dbmoon(N, d, r, w)
 # doublemoon.m - genereate the double moon data set in Haykin's book titled
@@ -64,18 +67,19 @@ def dbmoon(N=1000, d=1, r=10, w=6):
     return data
 
 
-# In[128]:
+# In[6]:
 
-dbmoon = dbmoon()
+N=1000
+dbmoon = dbmoon(N)
 
 
-# In[129]:
+# In[7]:
 
-plot(dbmoon[0:N,0], dbmoon[0:N,1], 'ro',dbmoon[N:,0], dbmoon[N:,1], 'go')
+plot(dbmoon[0:N,0], dbmoon[0:N,1], 'ro',dbmoon[N:,0], dbmoon[N:,1], 'go',-10,5,'yo')
 show()
 
 
-# In[130]:
+# In[172]:
 
 def create_clusters(x,clusterskpoints):
     clusters={}
@@ -105,21 +109,21 @@ def recenter(clusters):
     return newmu
 def k_means(k):
     centers=10*np.random.randn(k, 2)-5
-    for i in range(51):#should be untill convergence but 50 itteration has shown good results i.e is enough
+    for i in range(30):#should be untill convergence but 50 itteration has shown good results i.e is enough
         clusters=create_clusters(dbmoon[:,:2],centers)
         centers=recenter(clusters)
-        if i%10 == 0 :
-            keys = sorted(clusters.keys())  
-            for K in keys:
-                plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
-                plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
-                #print " itteration number :" , i
-                #print " "
-            show()
+        #if i%30 == 0 :
+    keys = sorted(clusters.keys())  
+    for K in keys:
+        plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
+        plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
+    #print " iteration number :" , i
+        #print " "
+    show()
     return clusters,centers
 
 
-# In[131]:
+# In[173]:
 
 def generate_w(k):
     return random.randn(k,1)
@@ -135,35 +139,58 @@ def get_dmax(clusterskpoints):
     return max(d)
 
 def net(x,center):
-    net= (norm(x-center))**2
+    net= (norm((x-center),axis=1).reshape(len(x),1)**2)
     return net
 def gaussian_unit(x,variance,center):
-    net=net(x,center)
-    return exp((-1/2*variance)*net(x,center))
-def output(x,w,centers):
-    nclusters = len(centers)
-    dmax= get_dmax(centers)
-    variance = (dmax**2)/(2*nclusters)
-    stand_d=sqrt(variance)
-    y=0
-    for i in range(4):
-        y=y=w*gaussian_unit(x,variance,center[i])
-        
+    n  = x-center
+    ne = norm(n,axis=1).reshape(len(center),1)
+    return exp((-1*ne)/(2*variance))
 def train(in_data,k):
-    x=dbmoon[0:2*N,0:2]
-    d=dbmoon[0:2*N,2]
+    x=in_data[0:2*N,0:2]
+    d=in_data[0:2*N,2].reshape(2*N,1)
+    eta=0.0001
     clusters,centers=k_means(k)
+    #centers=np.array([[  6.87537075  , 6.33799326],[  3.62401967  ,-7.68839757],[ -6.37598033 ,  6.68839757],[ 16.87537075 , -7.33799326]])
     k_old=k
     k=len(centers)
     w=generate_w(k)
+    #w=np.array([[ 0.77046837],[ 1.27188444],[ 0.69082246],[-0.23771142]])
+    dmax= get_dmax(centers)
+    variance = (dmax)/sqrt(2*k)
+    variance=20.
+    print "kmeans done"
+    print "clusters number :",k
+    for j in range(500):
+        e=0
+        total=0
+        for i in range(2000):
+            delta=0
+            distance  = x[i]-centers
+            net = norm(distance,axis=1).reshape(k,1)
+            activation= np.exp(-(net**2)/(2*(variance**2))) 
+            y=sum(activation*w)
+
+            e=(error(d[i],y))
+            ### update parameters 
+            delta =(eta*e*activation)
+            deltam=eta*e*w*activation*(-1/2.*(activation**2))
+            w+=delta
+            centers+=deltam
+    total=0.
+    for i in range(2000):
+        e=0.
+        delta=0.
+        distance  = x[i]-centers
+        net = norm(distance,axis=1).reshape(k,1)
+        activation= np.exp(-(net**2)/(2*(variance**2))) 
+        y=sum(activation*w)
+        e=(error(d[i],y))**2
+        total=total+e
+    print "error :" , (total/(2*N))
 
 
-# In[ ]:
+# In[175]:
 
-
-
-
-# In[ ]:
-
-
+for k in (2,4,6,8):
+    train(dbmoon,k)
 
