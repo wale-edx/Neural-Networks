@@ -1,14 +1,14 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 # TODO
    ## 1) Training :3
   ## 2) add function to check if the centroids keep moving 
 
 
-# In[4]:
+# In[2]:
 
 get_ipython().magic(u'pylab inline')
 from scipy.linalg import norm, pinv
@@ -17,7 +17,7 @@ import math
 random.seed()
 
 
-# In[5]:
+# In[15]:
 
 # Usage: data = dbmoon(N, d, r, w)
 # doublemoon.m - genereate the double moon data set in Haykin's book titled
@@ -67,19 +67,21 @@ def dbmoon(N=1000, d=1, r=10, w=6):
     return data
 
 
-# In[6]:
+# In[16]:
 
 N=1000
 dbmoon = dbmoon(N)
+st=0
+errorstack=zeros((4,2))
 
 
-# In[7]:
+# In[17]:
 
 plot(dbmoon[0:N,0], dbmoon[0:N,1], 'ro',dbmoon[N:,0], dbmoon[N:,1], 'go',-10,5,'yo')
 show()
 
 
-# In[172]:
+# In[18]:
 
 def create_clusters(x,clusterskpoints):
     clusters={}
@@ -114,17 +116,16 @@ def k_means(k):
         centers=recenter(clusters)
         #if i%30 == 0 :
     keys = sorted(clusters.keys())  
-    #plotting el clusters
-    #for K in keys:
-        #plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
-        #plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
-    #print " iteration number :" , i
-        #print " "
-    #show()
+#     for K in keys:
+#         plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
+#         plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
+#     #print " iteration number :" , i
+#         #print " "
+#     show()
     return clusters,centers
 
 
-# In[173]:
+# In[35]:
 
 def generate_w(k):
     return random.randn(k,1)
@@ -146,52 +147,71 @@ def gaussian_unit(x,variance,center):
     n  = x-center
     ne = norm(n,axis=1).reshape(len(center),1)
     return exp((-1*ne)/(2*variance))
-def train(in_data,k):
-    x=in_data[0:2*N,0:2]
-    d=in_data[0:2*N,2].reshape(2*N,1)
-    eta=0.0001
-    clusters,centers=k_means(k)
-    #centers=np.array([[  6.87537075  , 6.33799326],[  3.62401967  ,-7.68839757],[ -6.37598033 ,  6.68839757],[ 16.87537075 , -7.33799326]])
-    k_old=k
-    k=len(centers)
-    w=generate_w(k)
-    #w=np.array([[ 0.77046837],[ 1.27188444],[ 0.69082246],[-0.23771142]])
-    dmax= get_dmax(centers)
-    variance = (dmax)/sqrt(2*k)
-    variance=20.
-    print "kmeans done"
-    print "clusters number :",k
-    for j in range(500):
-        e=0
-        total=0
+
+def train(in_data):
+    st=0
+    for k in (2,4,6,8):
+        x=in_data[0:2*N,0:2]
+        d=in_data[0:2*N,2].reshape(2*N,1)
+        eta=0.0001
+        clusters,centers=k_means(k)
+        #centers=np.array([[  6.87537075  , 6.33799326],[  3.62401967  ,-7.68839757],[ -6.37598033 ,  6.68839757],[ 16.87537075 , -7.33799326]])
+        k_old=k
+        k=len(centers)
+        w=generate_w(k)
+        #w=np.array([[ 0.77046837],[ 1.27188444],[ 0.69082246],[-0.23771142]])
+        dmax= get_dmax(centers)
+        variance = (dmax)/sqrt(2*k)
+        variance=20.
+        print "kmeans done"
+        print "clusters number :",k
+        print "training..."
+        for j in range(500):
+            if j==250:
+                print "still training half way to end :D .."
+            e=0
+            total=0
+            for i in range(2000):
+                delta=0
+                distance  = x[i]-centers
+                net = norm(distance,axis=1).reshape(k,1)
+                activation= np.exp(-(net**2)/(2*(variance**2))) 
+                y=sum(activation*w)
+
+                e=(error(d[i],y))
+                ### update parameters 
+                delta =(eta*e*activation)
+                deltam=eta*e*w*activation*(-1/2.*(activation**2))
+                w+=delta
+                centers+=deltam
+        total=0.
         for i in range(2000):
-            delta=0
+            e=0.
+            delta=0.
             distance  = x[i]-centers
             net = norm(distance,axis=1).reshape(k,1)
             activation= np.exp(-(net**2)/(2*(variance**2))) 
             y=sum(activation*w)
-
-            e=(error(d[i],y))
-            ### update parameters 
-            delta =(eta*e*activation)
-            deltam=eta*e*w*activation*(-1/2.*(activation**2))
-            w+=delta
-            centers+=deltam
-    total=0.
-    for i in range(2000):
-        e=0.
-        delta=0.
-        distance  = x[i]-centers
-        net = norm(distance,axis=1).reshape(k,1)
-        activation= np.exp(-(net**2)/(2*(variance**2))) 
-        y=sum(activation*w)
-        e=(error(d[i],y))**2
-        total=total+e
-    print "error :" , (total/(2*N))
+            e=(error(d[i],y))**2
+            total=total+e
+        print "error :" , (total/(2*N))
+        errorstack[st]=[k,(total/(2*N))]
+        st=(st+1)
+    mink=0
+    minerror=10000    
+    for i in range(len(errorstack)):
+        if errorstack[i,1]<minerror:
+            minerror=errorstack[i,1]
+            mink=errorstack[i,0]
+    print "minimum error", minerror ," with k :" , mink
 
 
-# In[175]:
+# In[ ]:
 
-for k in (2,4,6,8):
-    train(dbmoon,k)
+train(dbmoon)
+
+
+# In[11]:
+
+
 
