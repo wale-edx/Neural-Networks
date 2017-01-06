@@ -1,23 +1,18 @@
 
 # coding: utf-8
+#%pylab inline
 
-# In[1]:
-
-# TODO
-   ## 1) Training :3
-  ## 2) add function to check if the centroids keep moving 
-
-
-# In[2]:
-
-get_ipython().magic(u'pylab inline')
+#get_ipython().magic(u'pylab inline')
+from matplotlib import pylab
+from pylab import *
 from scipy.linalg import norm, pinv
 import numpy as np
-import math
-random.seed()
+import math,random
+from random import *
+np.random.seed()
 
 
-# In[15]:
+# In[3]:
 
 # Usage: data = dbmoon(N, d, r, w)
 # doublemoon.m - genereate the double moon data set in Haykin's book titled
@@ -67,21 +62,18 @@ def dbmoon(N=1000, d=1, r=10, w=6):
     return data
 
 
-# In[16]:
 
 N=1000
 dbmoon = dbmoon(N)
 st=0
-errorstack=zeros((4,2))
+errorstack=np.zeros((4,2))
 
 
-# In[17]:
 
-plot(dbmoon[0:N,0], dbmoon[0:N,1], 'ro',dbmoon[N:,0], dbmoon[N:,1], 'go',-10,5,'yo')
-show()
+#plot(dbmoon[0:N,0], dbmoon[0:N,1], 'ro',dbmoon[N:,0], dbmoon[N:,1], 'go',-10,5,'yo')
+#show()
 
 
-# In[18]:
 
 def create_clusters(x,clusterskpoints):
     clusters={}
@@ -96,7 +88,7 @@ def create_clusters(x,clusterskpoints):
                 mindist=distance   
         try:   
             a=clusters[mindistk]
-            a = vstack((a,i[1]))
+            a = np.vstack((a,i[1]))
             clusters[mindistk] =a
         except KeyError:
             clusters[mindistk] = i[1]
@@ -107,28 +99,24 @@ def recenter(clusters):
     
     for k in keys:
         n= np.mean(clusters[k], axis = 0)
-        newmu=vstack((newmu,n))
+        newmu=np.vstack((newmu,n))
     return newmu
 def k_means(k):
     centers=10*np.random.randn(k, 2)-5
     for i in range(30):#should be untill convergence but 50 itteration has shown good results i.e is enough
         clusters=create_clusters(dbmoon[:,:2],centers)
         centers=recenter(clusters)
-        #if i%30 == 0 :
     keys = sorted(clusters.keys())  
-#     for K in keys:
-#         plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
-#         plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
-#     #print " iteration number :" , i
-#         #print " "
-#     show()
+#    for K in keys:
+#        plot(clusters[K][:N,:1],clusters[K][:N,1:2],'o')
+ #       plot(centers[0:2*N,0], centers[0:2*N,1], 'yo')
+
+ #   show()
     return clusters,centers
 
 
-# In[35]:
-
 def generate_w(k):
-    return random.randn(k,1)
+    return np.random.randn(k,1)
 def error(d,o):
     return d-o
 def sumerror(d,o):
@@ -155,13 +143,11 @@ def train(in_data):
         d=in_data[0:2*N,2].reshape(2*N,1)
         eta=0.0001
         clusters,centers=k_means(k)
-        #centers=np.array([[  6.87537075  , 6.33799326],[  3.62401967  ,-7.68839757],[ -6.37598033 ,  6.68839757],[ 16.87537075 , -7.33799326]])
         k_old=k
         k=len(centers)
         w=generate_w(k)
-        #w=np.array([[ 0.77046837],[ 1.27188444],[ 0.69082246],[-0.23771142]])
         dmax= get_dmax(centers)
-        variance = (dmax)/sqrt(2*k)
+        variance = (dmax)/math.sqrt(2*k)
         variance=20.
         print "kmeans done"
         print "clusters number :",k
@@ -205,13 +191,7 @@ def train(in_data):
             mink=errorstack[i,0]
     print "minimum error", minerror ," with k :" , mink
 
-
-# In[ ]:
-
 train(dbmoon)
-
-
-# In[11]:
 
 
 
